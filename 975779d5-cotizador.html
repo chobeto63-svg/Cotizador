@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cotizador de Obra</title>
+<style>
+:root{--navy:#00113D;--accent:#F57C00;--bg:#f4f6fa;--line:#dfe3ec;--ink:#1b2333;--mut:#667085;--ok:#1a7f4b}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:16px}
+header{background:var(--navy);color:#fff;padding:14px 16px}
+header h1{margin:0;font-size:20px}
+header p{margin:2px 0 0;font-size:13px;opacity:.8}
+.wrap{max-width:860px;margin:0 auto;padding:12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+button,.btn{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 13px;border-radius:8px;cursor:pointer}
+button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.sec{background:var(--navy);border-color:var(--navy);color:#fff}
+button.x{color:#b42318;border-color:#f3c7c3;padding:6px 10px;font-size:14px}
+button:active{transform:scale(.98)}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 10px;font-size:16px;color:var(--navy)}
+label{display:block;font-size:13px;color:var(--mut);margin-bottom:8px}
+input,select,textarea{font:inherit;width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);margin-top:3px}
+textarea{min-height:70px;resize:vertical}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.it{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px;background:#fafbfd}
+.it .d{margin:0 0 8px;font-weight:600}
+.it .row{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+.it .foot{display:flex;align-items:center;gap:10px;margin-top:8px}
+.it .sub{font-weight:700;color:var(--navy);margin-right:auto}
+.tag{font-size:12px;background:#e8eefc;color:#2b4cb3;padding:3px 8px;border-radius:99px}
+.vacio{color:var(--mut);text-align:center;padding:14px}
+.sum div{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line)}
+.sum .tot{font-size:20px;font-weight:800;color:var(--navy);border-bottom:0;padding-top:10px}
+.sum .mut{color:var(--mut);font-size:14px}
+.chk{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--ink)}
+.chk input{width:auto;margin:0}
+details summary{cursor:pointer;font-weight:600;color:var(--navy)}
+dialog{border:0;border-radius:12px;padding:16px;max-width:560px;width:calc(100% - 24px)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.gl{display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line);padding:8px 0;flex-wrap:wrap}
+.gl .i{flex:1;min-width:150px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:9}
+.toast.on{opacity:1}
+/* Vista previa / documento */
+#vista{display:none}
+body.vista #editor{display:none}
+body.vista #vista{display:block}
+#doc{background:#fff;border:1px solid var(--line);border-radius:6px;padding:28px;color:#111;font-size:14px}
+#doc .top{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid var(--navy);padding-bottom:12px;margin-bottom:14px}
+#doc .top img{max-height:64px;max-width:200px;display:block;margin-bottom:6px}
+#doc h3{margin:0;font-size:20px;color:var(--navy)}
+#doc .meta{text-align:right}
+#doc table{width:100%;border-collapse:collapse;margin:10px 0}
+#doc th{background:var(--navy);color:#fff;text-align:left;padding:6px 8px;font-size:13px}
+#doc td{padding:6px 8px;border-bottom:1px solid #e6e9f0;vertical-align:top}
+#doc .r{text-align:right;white-space:nowrap}
+#doc tr.grp td{background:#eef1f8;font-weight:700;color:var(--navy)}
+#doc .tt{margin-left:auto;width:min(320px,100%)}
+#doc .tt div{display:flex;justify-content:space-between;padding:4px 0}
+#doc .tt .g{font-size:18px;font-weight:800;border-top:2px solid var(--navy);margin-top:4px;padding-top:8px}
+#doc .notas{margin-top:16px;font-size:12.5px;color:#444;white-space:pre-wrap}
+#doc .firma{margin-top:40px;display:flex;gap:40px}
+#doc .firma div{flex:1;border-top:1px solid #333;padding-top:4px;font-size:12px;text-align:center}
+@media print{
+  body{background:#fff}
+  header,#editor,.bar,.toast,dialog{display:none!important}
+  #vista{display:block!important}
+  .wrap{padding:0;max-width:none}
+  #doc{border:0;padding:0}
+  @page{margin:14mm}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Cotizador de Obra</h1>
+  <p>Cotiza rápido, con tu margen y tu IVA, y envía un PDF profesional.</p>
+</header>
+
+<div class="wrap">
+  <div class="bar">
+    <button id="bNueva">Nueva</button>
+    <button id="bGuardadas">Guardadas</button>
+    <button id="bImportar">Importar de CotizaFácil</button>
+    <button id="bVista" class="sec">Vista previa</button>
+    <button id="bGuardar" class="pri">Guardar</button>
+  </div>
+
+  <div id="editor">
+    <details class="card" id="negocio">
+      <summary>Mi negocio (sale en el encabezado)</summary>
+      <div class="grid" style="margin-top:10px">
+        <label>Nombre o empresa<input data-neg="nombre" autocomplete="off"></label>
+        <label>Teléfono / WhatsApp<input data-neg="tel" inputmode="tel"></label>
+        <label>Correo<input data-neg="correo" type="email"></label>
+        <label>Logo (opcional)<input type="file" id="logoFile" accept="image/*"></label>
+      </div>
+      <button id="bQuitarLogo" class="x" type="button">Quitar logo</button>
+      <details style="margin-top:12px">
+        <summary>Respaldo de mis datos</summary>
+        <p style="font-size:13px;color:var(--mut)">Tus cotizaciones viven solo en este navegador. Descarga un respaldo de vez en cuando.</p>
+        <button id="bResp" type="button">Descargar respaldo</button>
+        <label style="margin-top:8px">Restaurar respaldo<input type="file" id="respFile" accept=".json,application/json"></label>
+      </details>
+    </details>
+
+    <div class="card">
+      <h2>Cotización <span id="numTxt"></span></h2>
+      <div class="grid">
+        <label>Cliente<input data-p="cliente.nombre" autocomplete="off"></label>
+        <label>Teléfono del cliente<input data-p="cliente.tel" inputmode="tel"></label>
+        <label>Obra o dirección<input data-p="cliente.obra"></label>
+        <label>Fecha<input data-p="fecha" type="date"></label>
+        <label>Validez (días)<input data-p="validez" type="number" inputmode="numeric" min="1"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Partidas</h2>
+      <div id="items"></div>
+      <div class="bar" style="margin:0">
+        <button id="bAddMat" class="pri">+ Material</button>
+        <button id="bAddMano">+ Mano de obra</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Ajustes y total</h2>
+      <div class="grid">
+        <label>Ganancia sobre materiales (%)<input data-p="margen" type="number" inputmode="decimal" step="any" min="0"></label>
+        <label>Descuento (%)<input data-p="descuento" type="number" inputmode="decimal" step="any" min="0"></label>
+      </div>
+      <label class="chk"><input type="checkbox" data-p="iva"> Sumar IVA (13 %)</label>
+      <div class="sum" id="sum" style="margin-top:8px"></div>
+      <label style="margin-top:12px">Notas y condiciones<textarea data-p="notas"></textarea></label>
+    </div>
+  </div>
+
+  <div id="vista">
+    <div class="bar">
+      <button id="bEditar">← Volver a editar</button>
+      <button id="bPrint" class="pri">Imprimir / guardar PDF</button>
+      <button id="bWa">Enviar por WhatsApp</button>
+    </div>
+    <div id="doc"></div>
+  </div>
+</div>
+
+<dialog id="dlgImp">
+  <h2 style="margin-top:0">Importar de CotizaFácil</h2>
+  <p style="font-size:14px;color:var(--mut)">Pega aquí el código o el enlace que te dio CotizaFácil, o un JSON con tus productos. Se agregan a tu cotización como materiales.</p>
+  <textarea id="impTxt" placeholder="Pega aquí…"></textarea>
+  <div class="bar" style="margin:10px 0 0">
+    <button id="impOk" class="pri">Importar</button>
+    <button id="impNo">Cancelar</button>
+  </div>
+</dialog>
+
+<dialog id="dlgG">
+  <h2 style="margin-top:0">Cotizaciones guardadas</h2>
+  <div id="lista"></div>
+  <div class="bar" style="margin:10px 0 0"><button id="gCerrar">Cerrar</button></div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var IVA_PCT=13;
+var $=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var r2=function(n){return Math.round((n+Number.EPSILON)*100)/100};
+var money=function(n){return '$'+r2(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})};
+var num=function(v){var n=parseFloat(v);return isFinite(n)?n:0};
+var store={
+  get:function(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+};
+var hoy=function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+var fnum=function(n){return 'COT-'+String(n).padStart(4,'0')};
+var fechaTxt=function(s){var p=(s||'').split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:''};
+
+var neg=Object.assign({nombre:'',tel:'',correo:'',logo:''},store.get('cot_negocio',{}));
+function nueva(){
+  return {num:store.get('cot_contador',0)+1,fecha:hoy(),validez:15,
+    cliente:{nombre:'',tel:'',obra:''},items:[],margen:0,descuento:0,iva:true,
+    notas:'Precios sujetos a cambio sin previo aviso.\nSe requiere anticipo para iniciar los trabajos.'};
+}
+var q=store.get('cot_borrador',null)||nueva();
+q.cliente=q.cliente||{nombre:'',tel:'',obra:''};
+q.items=Array.isArray(q.items)?q.items:[];
+
+/* ---------- cálculo ---------- */
+function pu(i){return i.tipo==='material'?r2(i.p*(1+q.margen/100)):r2(i.p)}
+function lt(i){return r2(pu(i)*i.c)}
+function calc(){
+  var costo=0,venta=0,mo=0;
+  q.items.forEach(function(i){
+    if(i.tipo==='material'){costo+=i.p*i.c;venta+=lt(i)}else{mo+=lt(i)}
+  });
+  var sub=r2(venta+mo),desc=r2(sub*q.descuento/100),base=r2(sub-desc),iva=q.iva?r2(base*IVA_PCT/100):0;
+  return {costo:r2(costo),venta:r2(venta),ganancia:r2(venta-costo),mo:r2(mo),sub:sub,desc:desc,base:base,iva:iva,total:r2(base+iva)};
+}
+
+/* ---------- render editor ---------- */
+function renderItems(){
+  var h=q.items.map(function(i,k){
+    return '<div class="it" data-k="'+k+'">'+
+    '<input class="d" data-f="d" placeholder="Descripción (ej. Cemento 42.5 kg)" value="'+esc(i.d)+'">'+
+    '<div class="row">'+
+    '<label>Cantidad<input data-f="c" type="number" inputmode="decimal" step="any" min="0" value="'+i.c+'"></label>'+
+    '<label>Unidad<input data-f="u" value="'+esc(i.u)+'"></label>'+
+    '<label>Costo unitario<input data-f="p" type="number" inputmode="decimal" step="any" min="0" value="'+i.p+'"></label>'+
+    '<label>Tipo<select data-f="tipo"><option value="material"'+(i.tipo==='material'?' selected':'')+'>Material</option><option value="mano"'+(i.tipo==='mano'?' selected':'')+'>Mano de obra</option></select></label>'+
+    '</div><div class="foot"><span class="sub" data-sub></span>'+(i.t?'<span class="tag">'+esc(i.t)+'</span>':'')+
+    '<button class="x" data-del type="button">Quitar</button></div></div>';
+  }).join('');
+  $('#items').innerHTML=h||'<p class="vacio">Aún no hay partidas. Agrega un material o mano de obra, o importa desde CotizaFácil.</p>';
+  updateSubs();
+}
+function updateSubs(){
+  var els=document.querySelectorAll('#items .it');
+  els.forEach(function(el){
+    var i=q.items[+el.dataset.k];
+    if(i){el.querySelector('[data-sub]').textContent='Total: '+money(lt(i))}
+  });
+}
+function renderSum(){
+  var t=calc(),h='';
+  if(t.venta||t.mo){
+    h+='<div class="mut"><span>Costo de materiales</span><span>'+money(t.costo)+'</span></div>';
+    h+='<div class="mut"><span>Tu ganancia en materiales</span><span>'+money(t.ganancia)+'</span></div>';
+    h+='<div><span>Materiales (precio al cliente)</span><span>'+money(t.venta)+'</span></div>';
+    h+='<div><span>Mano de obra</span><span>'+money(t.mo)+'</span></div>';
+    if(t.desc)h+='<div><span>Descuento</span><span>-'+money(t.desc)+'</span></div>';
+    if(t.iva)h+='<div><span>IVA '+IVA_PCT+'%</span><span>'+money(t.iva)+'</span></div>';
+  }
+  h+='<div class="tot"><span>TOTAL</span><span>'+money(t.total)+'</span></div>';
+  $('#sum').innerHTML=h;
+}
+function renderFields(){
+  document.querySelectorAll('[data-p]').forEach(function(el){
+    var v=getPath(el.dataset.p);
+    if(el.type==='checkbox')el.checked=!!v;else el.value=v==null?'':v;
+  });
+  document.querySelectorAll('[data-neg]').forEach(function(el){el.value=neg[el.dataset.neg]||''});
+  $('#numTxt').textContent=fnum(q.num);
+}
+function getPath(p){return p.split('.').reduce(function(o,k){return o&&o[k]},q)}
+function setPath(p,v){var a=p.split('.'),o=q;for(var i=0;i<a.length-1;i++)o=o[a[i]];o[a[a.length-1]]=v}
+
+/* ---------- render documento ---------- */
+function renderDoc(){
+  var t=calc();
+  var logo=(neg.logo&&neg.logo.indexOf('data:image/')===0)?'<img src="'+neg.logo+'" alt="">':'';
+  var rows='';
+  function grupo(tipo,titulo){
+    var l=q.items.filter(function(i){return i.tipo===tipo&&(i.d||i.p)});
+    if(!l.length)return;
+    rows+='<tr class="grp"><td colspan="5">'+titulo+'</td></tr>';
+    l.forEach(function(i){
+      rows+='<tr><td>'+esc(i.d||'—')+'</td><td class="r">'+i.c+'</td><td>'+esc(i.u)+'</td><td class="r">'+money(pu(i))+'</td><td class="r">'+money(lt(i))+'</td></tr>';
+    });
+  }
+  grupo('material','Materiales');
+  grupo('mano','Mano de obra');
+  var tot='<div><span>Subtotal</span><span>'+money(t.sub)+'</span></div>';
+  if(t.desc)tot+='<div><span>Descuento ('+q.descuento+'%)</span><span>-'+money(t.desc)+'</span></div>';
+  if(t.iva)tot+='<div><span>IVA '+IVA_PCT+'%</span><span>'+money(t.iva)+'</span></div>';
+  tot+='<div class="g"><span>TOTAL</span><span>'+money(t.total)+'</span></div>';
+  $('#doc').innerHTML=
+    '<div class="top"><div>'+logo+'<h3>'+esc(neg.nombre||'Cotización')+'</h3>'+
+    '<div>'+esc(neg.tel)+(neg.tel&&neg.correo?' · ':'')+esc(neg.correo)+'</div></div>'+
+    '<div class="meta"><h3>COTIZACIÓN</h3><div><b>'+fnum(q.num)+'</b></div><div>Fecha: '+fechaTxt(q.fecha)+'</div><div>Válida por '+q.validez+' días</div></div></div>'+
+    '<div><b>Cliente:</b> '+esc(q.cliente.nombre||'—')+(q.cliente.tel?' · '+esc(q.cliente.tel):'')+'</div>'+
+    (q.cliente.obra?'<div><b>Obra:</b> '+esc(q.cliente.obra)+'</div>':'')+
+    '<table><thead><tr><th>Descripción</th><th class="r">Cant.</th><th>Unidad</th><th class="r">P. unit.</th><th class="r">Total</th></tr></thead><tbody>'+
+    (rows||'<tr><td colspan="5" style="text-align:center;color:#888">Sin partidas</td></tr>')+'</tbody></table>'+
+    '<div class="tt">'+tot+'</div>'+
+    (q.notas?'<div class="notas">'+esc(q.notas)+'</div>':'')+
+    '<div class="firma"><div>Firma del contratista</div><div>Aceptado por el cliente</div></div>';
+}
+
+function recalc(){
+  updateSubs();renderSum();renderDoc();
+  store.set('cot_borrador',q);
+}
+function renderAll(){renderFields();renderItems();renderSum();renderDoc();store.set('cot_borrador',q)}
+
+/* ---------- eventos ---------- */
+document.addEventListener('input',function(e){
+  var el=e.target;
+  if(el.dataset&&el.dataset.p){
+    var v=el.type==='checkbox'?el.checked:(el.type==='number'?num(el.value):el.value);
+    if(el.dataset.p==='validez')v=Math.max(1,Math.round(num(el.value))||15);
+    setPath(el.dataset.p,v);recalc();return;
+  }
+  if(el.dataset&&el.dataset.neg){neg[el.dataset.neg]=el.value;store.set('cot_negocio',neg);renderDoc();return}
+  var it=el.closest&&el.closest('.it');
+  if(it&&el.dataset.f){
+    var i=q.items[+it.dataset.k];if(!i)return;
+    var f=el.dataset.f;
+    i[f]=(f==='c'||f==='p')?Math.max(0,num(el.value)):el.value;
+    recalc();
+  }
+});
+$('#items').addEventListener('click',function(e){
+  if(e.target.matches('[data-del]')){
+    var k=+e.target.closest('.it').dataset.k;
+    q.items.splice(k,1);renderItems();recalc();
+  }
+});
+function addItem(tipo){
+  q.items.push({d:'',u:tipo==='mano'?'servicio':'und',c:1,p:0,tipo:tipo,t:''});
+  renderItems();recalc();
+  var ds=document.querySelectorAll('#items .d');if(ds.length)ds[ds.length-1].focus();
+}
+$('#bAddMat').onclick=function(){addItem('material')};
+$('#bAddMano').onclick=function(){addItem('mano')};
+
+function vista(on){document.body.classList.toggle('vista',on);if(on)renderDoc();window.scrollTo(0,0)}
+$('#bVista').onclick=function(){vista(true)};
+$('#bEditar').onclick=function(){vista(false)};
+
+function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(function(){t.classList.remove('on')},2600)}
+
+/* guardar / lista */
+function guardadas(){return store.get('cot_guardadas',[])}
+function guardar(){
+  var l=guardadas(),c=JSON.parse(JSON.stringify(q)),idx=l.findIndex(function(x){return x.num===c.num});
+  if(idx>=0)l[idx]=c;else l.push(c);
+  var ok=store.set('cot_guardadas',l);
+  store.set('cot_contador',Math.max(store.get('cot_contador',0),q.num));
+  toast(ok?'Cotización '+fnum(q.num)+' guardada':'No se pudo guardar en este navegador');
+}
+$('#bGuardar').onclick=guardar;
+$('#bNueva').onclick=function(){
+  if(q.items.length&&!confirm('¿Empezar una cotización nueva? Guarda la actual antes si la necesitas.'))return;
+  store.set('cot_contador',Math.max(store.get('cot_contador',0),q.num));
+  q=nueva();renderAll();vista(false);
+};
+function renderLista(){
+  var l=guardadas().slice().sort(function(a,b){return b.num-a.num});
+  var h=l.map(function(c){
+    var tot=0;var old=q;q=c;try{tot=calc().total}finally{q=old}
+    return '<div class="gl" data-n="'+c.num+'"><div class="i"><b>'+fnum(c.num)+'</b> · '+esc((c.cliente&&c.cliente.nombre)||'Sin cliente')+'<br><span style="font-size:13px;color:var(--mut)">'+fechaTxt(c.fecha)+' · '+money(tot)+'</span></div>'+
+    '<button data-a="abrir">Abrir</button><button data-a="dup">Duplicar</button><button class="x" data-a="del">Borrar</button></div>';
+  }).join('');
+  $('#lista').innerHTML=h||'<p class="vacio">Todavía no has guardado cotizaciones.</p>';
+}
+$('#bGuardadas').onclick=function(){renderLista();$('#dlgG').showModal()};
+$('#gCerrar').onclick=function(){$('#dlgG').close()};
+$('#lista').addEventListener('click',function(e){
+  var a=e.target.dataset.a;if(!a)return;
+  var n=+e.target.closest('.gl').dataset.n,l=guardadas(),c=l.find(function(x){return x.num===n});
+  if(!c)return;
+  if(a==='abrir'){q=JSON.parse(JSON.stringify(c));renderAll();$('#dlgG').close();vista(false)}
+  if(a==='dup'){
+    var d=JSON.parse(JSON.stringify(c));
+    d.num=Math.max(store.get('cot_contador',0),q.num)+1;d.fecha=hoy();
+    q=d;store.set('cot_contador',d.num);renderAll();$('#dlgG').close();vista(false);toast('Copia creada: '+fnum(d.num)+' (sin guardar aún)');
+  }
+  if(a==='del'&&confirm('¿Borrar '+fnum(n)+'?')){
+    store.set('cot_guardadas',l.filter(function(x){return x.num!==n}));renderLista();
+  }
+});
+
+/* imprimir / whatsapp */
+$('#bPrint').onclick=function(){
+  var t=document.title;document.title='Cotizacion-'+fnum(q.num)+(q.cliente.nombre?'-'+q.cliente.nombre.replace(/[^\w]+/g,'_'):'');
+  window.print();setTimeout(function(){document.title=t},1000);
+};
+$('#bWa').onclick=function(){
+  var t=calc(),m=[];
+  m.push('*'+(neg.nombre||'Cotización')+'* - '+fnum(q.num));
+  m.push('Cliente: '+(q.cliente.nombre||'—')+(q.cliente.obra?' / '+q.cliente.obra:''));
+  m.push('');
+  q.items.filter(function(i){return i.d||i.p}).forEach(function(i){m.push('• '+i.d+' ('+i.c+' '+i.u+'): '+money(lt(i)))});
+  m.push('');
+  if(t.desc)m.push('Descuento: -'+money(t.desc));
+  if(t.iva)m.push('IVA '+IVA_PCT+'%: '+money(t.iva));
+  m.push('*TOTAL: '+money(t.total)+'*');
+  m.push('Válida por '+q.validez+' días.');
+  var d=(q.cliente.tel||'').replace(/\D/g,'');
+  if(d.length===8)d='503'+d;
+  window.open('https://wa.me/'+d+'?text='+encodeURIComponent(m.join('\n')),'_blank');
+};
+
+/* logo */
+$('#logoFile').addEventListener('change',function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var w=Math.min(300,img.width),h=Math.round(img.height*w/img.width);
+      var c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      neg.logo=c.toDataURL('image/png');store.set('cot_negocio',neg);renderDoc();toast('Logo guardado');
+    };
+    img.src=r.result;
+  };
+  r.readAsDataURL(f);
+});
+$('#bQuitarLogo').onclick=function(){neg.logo='';store.set('cot_negocio',neg);renderDoc()};
+
+/* respaldo */
+$('#bResp').onclick=function(){
+  var data={v:1,negocio:neg,contador:store.get('cot_contador',0),guardadas:guardadas(),borrador:q};
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));
+  a.download='respaldo-cotizador-'+hoy()+'.json';a.click();
+};
+$('#respFile').addEventListener('change',function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var d=JSON.parse(r.result);
+      if(!d||!Array.isArray(d.guardadas))throw new Error('formato');
+      if(!confirm('Esto reemplaza tus cotizaciones guardadas actuales. ¿Continuar?'))return;
+      if(d.negocio)neg=Object.assign(neg,d.negocio);
+      store.set('cot_negocio',neg);store.set('cot_guardadas',d.guardadas);
+      store.set('cot_contador',d.contador||0);
+      if(d.borrador)q=d.borrador;
+      renderAll();toast('Respaldo restaurado');
+    }catch(err){toast('Ese archivo no es un respaldo válido')}
+  };
+  r.readAsText(f);
+});
+
+/* ---------- importar desde CotizaFácil ---------- */
+function decodeB64(s){
+  s=s.replace(/-/g,'+').replace(/_/g,'/');
+  while(s.length%4)s+='=';
+  var bin=atob(s),bytes=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function parseImport(txt){
+  txt=String(txt).trim();
+  var m=txt.match(/#import=([A-Za-z0-9_\-+\/=]+)/);
+  if(m)txt=m[1];
+  if(txt.charAt(0)==='{'||txt.charAt(0)==='[')return JSON.parse(txt);
+  return JSON.parse(decodeB64(txt));
+}
+function aplicarImport(obj){
+  var arr=Array.isArray(obj)?obj:obj&&obj.items;
+  if(!Array.isArray(arr)||!arr.length)throw new Error('sin productos');
+  var nuevos=arr.slice(0,200).map(function(x){
+    return {
+      d:String(x.d!=null?x.d:(x.nombre!=null?x.nombre:'')).slice(0,200),
+      u:String(x.u!=null?x.u:(x.unidad!=null?x.unidad:'und')).slice(0,20),
+      c:Math.max(0,num(x.c!=null?x.c:(x.cantidad!=null?x.cantidad:1))),
+      p:Math.max(0,num(x.p!=null?x.p:(x.precio!=null?x.precio:0))),
+      tipo:x.tipo==='mano'?'mano':'material',
+      t:String(x.t!=null?x.t:(x.tienda!=null?x.tienda:'')).slice(0,30)
+    };
+  });
+  q.items=q.items.concat(nuevos);
+  if(obj&&!Array.isArray(obj)&&obj.cliente&&typeof obj.cliente==='object'&&!q.cliente.nombre){
+    q.cliente.nombre=String(obj.cliente.nombre||'').slice(0,80);
+    q.cliente.tel=String(obj.cliente.tel||'').slice(0,30);
+  }
+  renderAll();
+  return nuevos.length;
+}
+$('#bImportar').onclick=function(){$('#impTxt').value='';$('#dlgImp').showModal()};
+$('#impNo').onclick=function(){$('#dlgImp').close()};
+$('#impOk').onclick=function(){
+  try{
+    var n=aplicarImport(parseImport($('#impTxt').value));
+    $('#dlgImp').close();vista(false);toast('Se importaron '+n+' productos');
+  }catch(err){toast('No se pudo leer ese código. Revisa que esté completo.')}
+};
+function importarAutomatico(){
+  try{
+    if(location.hash.indexOf('#import=')===0){
+      var n=aplicarImport(parseImport(location.hash));
+      history.replaceState(null,'',location.pathname+location.search);
+      toast('Se importaron '+n+' productos de CotizaFácil');
+    }
+    var envio=localStorage.getItem('cotizafacil_envio');
+    if(envio){
+      localStorage.removeItem('cotizafacil_envio');
+      var n2=aplicarImport(JSON.parse(envio));
+      toast('Se importaron '+n2+' productos de CotizaFácil');
+    }
+  }catch(err){toast('No se pudo importar el carrito de CotizaFácil')}
+}
+window.addEventListener('hashchange',importarAutomatico);
+
+renderAll();
+importarAutomatico();
+if(!neg.nombre)$('#negocio').open=true;
+})();
+</script>
+</body>
+</html>
